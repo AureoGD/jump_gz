@@ -1,0 +1,21 @@
+<?xml version='1.0'?>
+<gz version='1.0'>
+  <!-- <executable name='sim-server'>
+    <command>gz sim -s</command>
+  </executable>
+
+  <executable name='sim-client'>
+    <command>gz sim -g</command>
+    <auto_restart>true</auto_restart>
+  </executable> -->
+
+  <!-- <plugin name="gz::launch::LoadRGC"
+    filename="/home/agd/jump_gz/jump_rgc/build/libjump_rgc.so">
+    <action_service>jump/RGC/low_cmd</action_service>
+  </plugin> -->
+
+    <plugin name="gz::launch::JumpLoadAdapter"
+    filename="/home/agd/jump_gz/jump_adapter/build/libjump_adapter.so">
+  </plugin>
+
+</gz>

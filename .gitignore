@@ -1,0 +1,7 @@
+jump_adapter/build
+jump_cmsgs/build
+jump_env/__pycache__
+jump_lowcontrol/build
+jump_rgc/build
+jump_states/build
+tools_gz/build

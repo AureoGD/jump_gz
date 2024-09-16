@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package jump.msgs;
+
+import "gz/msgs/double_v.proto";
+
+message LowCmd {
+    bool valid = 1;
+    gz.msgs.Double_V qr =2;
+    gz.msgs.Double_V dqr =3;
+    
+}
