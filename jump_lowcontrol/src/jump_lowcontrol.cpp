@@ -144,28 +144,29 @@ void JumpLowControl::PreUpdate(const gz::sim::UpdateInfo &_info,
         *forceComp = gz::sim::v8::components::JointForceCmd({tau});
     }
     this->lastUpdateTime = _info.simTime;
-    variavel_qlqr += 1;
-    if (variavel_qlqr == 1000)
-    {
-        // gz::msgs::Empty empty;
-        // jump::msgs::LowStates msg;
+    // variavel_qlqr += 1;
+    // if (variavel_qlqr == 1000)
+    // {
 
-        // requisição direta no serviço dos estados - funciona
-        // bool result;
-        // bool executed = this->_Node.Request("/jump/low_state", empty, 5, msg, result);
-        // std::cout << result << std::endl;
-        // std::cout << msg.mutable_q()->data(1) << std::endl;
+    //     // reuisitando no mesmo tópico do adapter:
+    //     bool result;
+    //     gz::msgs::Boolean msg;
+    //     gz::msgs::Boolean _req;
+    //     _req.set_data(false);
+    //     msg.Clear();
+    //     bool executed = _Node.Request("ser/teste", _req, 500, msg, result);
+    //     std::cout << executed << ", " << result << ", " << msg.data() << std::endl;
+    //     variavel_qlqr = 0;
 
-        // reuisitando no mesmo tópico do adapter:
-        bool result;
-        gz::msgs::Boolean msg;
-        gz::msgs::Boolean _req;
-        _req.set_data(false);
-        msg.Clear();
-        bool executed = _Node.Request("ser/teste", _req, 500, msg, result);
-        std::cout << executed << ", " << result << ", " << msg.data() << std::endl;
-        variavel_qlqr = 0;
-    }
+    //     // gz::msgs::Boolean req_;
+    //     // jump::msgs::LowStates msg;
+
+    //     // requisição direta no serviço dos estados - funciona
+    //     // bool result;
+    //     // bool executed = this->_Node.Request("/jump/low_state", req_, 5, msg, result);
+    //     // std::cout << result << std::endl;
+    //     // std::cout << msg.mutable_q()->data(1) << std::endl;
+    // }
 }
 
 GZ_ADD_PLUGIN(JumpLowControl,

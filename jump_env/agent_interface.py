@@ -27,6 +27,8 @@ class AgenteInterface:
     def __init__(self):
         self.node = Node()
 
+        self.res_lowcmd = LowCmd()
+
         self.req_empty_msg = Empty()
         self.res_doubleV_msg = Double_V()
 
@@ -55,7 +57,7 @@ class AgenteInterface:
 
     def requestSensorSt(self):
         result, self.res_doubleV_msg = self.node.request(
-            "jump/adapter/req_states", self.req_empty_msg, Empty, Double_V, 1000
+            "jump/adapter/req_states", self.req_boolean, Boolean, Double_V, 1000
         )
 
         if result:
@@ -71,8 +73,19 @@ class AgenteInterface:
         if result:
             print(self.res_boolean.data)
 
+    def requestfoo(self):
+        self.req_boolean.data = True
+
+        result, self.res_lowcmd = self.node.request(
+            "/ser/teste", self.req_boolean, Boolean, LowCmd, 1000
+        )
+
+        if result:
+            print(self.res_boolean.data)
+
 
 ag = AgenteInterface()
 
-ag.requestSensorSt()
+# ag.requestfoo()
+# ag.requestSensorSt()
 ag.requestData()

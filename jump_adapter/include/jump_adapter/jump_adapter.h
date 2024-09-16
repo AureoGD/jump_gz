@@ -18,7 +18,7 @@ public:
     void init();
 
 private:
-    bool cb_states(const gz::msgs::Empty &req, gz::msgs::Double_V &res_msg);
+    bool cb_states(const gz::msgs::Boolean &req, gz::msgs::Double_V &res_msg);
 
     gz::transport::Node _Node;
 
