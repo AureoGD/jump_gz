@@ -32,7 +32,7 @@ void JumpStates::Configure(const gz::sim::Entity &_entity,
         this->CreateComponents(_ecm, joint);
     }
 
-    if (this->_Node.Advertise<JumpStates, gz::msgs::Empty, jump::msgs::LowStates>(this->service_name, &JumpStates::JumpStatesCB, this))
+    if (this->_Node.Advertise<JumpStates, gz::msgs::Boolean, jump::msgs::LowStates>(this->service_name, &JumpStates::JumpStatesCB, this))
     {
         std::cout << "The service [" << this->service_name << "] was created" << std::endl;
     }
@@ -80,13 +80,14 @@ void JumpStates::CreateComponents(gz::sim::v8::EntityComponentManager &_ecm,
     }
 }
 
-bool JumpStates::JumpStatesCB(const gz::msgs::Empty &req, jump::msgs::LowStates &resp_msg)
+bool JumpStates::JumpStatesCB(const gz::msgs::Boolean &req, jump::msgs::LowStates &resp_msg)
 {
+    // std::cout << "hei" << std::endl;
     std::lock_guard<std::mutex> lock(this->JumpStatesMutex);
     _toolsGz.EigenVec2VecMsg(this->q, resp_msg.mutable_q());
     _toolsGz.EigenVec2VecMsg(this->dq, resp_msg.mutable_dq());
     // _toolsGz.EigenVec2VecMsg(this->tau, resp_msg.mutable_tau());
-    std::cout << this->service_name << "Service CB. Data: " << resp_msg.q().data(1) << std::endl;
+    // std::cout << this->service_name << "Service CB. Data: " << resp_msg.q().data(1) << std::endl;
 
     return true;
 }

@@ -49,7 +49,7 @@ private:
     void CreateComponents(gz::sim::v8::EntityComponentManager &_ecm,
                           gz::sim::v8::Entity _joint);
 
-    bool JumpStatesCB(const gz::msgs::Empty &req, jump::msgs::LowStates &resp_msg);
+    bool JumpStatesCB(const gz::msgs::Boolean &req, jump::msgs::LowStates &resp_msg);
 
     bool testeCB(const gz::msgs::Boolean &req, gz::msgs::Boolean &resp_msg);
 
