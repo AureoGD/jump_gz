@@ -7,7 +7,6 @@ import numpy as np
 
 
 from gz.transport13 import Node
-from gz.msgs10.world_control_pb2 import WorldControl
 from gz.msgs10.boolean_pb2 import Boolean
 from gz.msgs10.int32_pb2 import Int32
 
