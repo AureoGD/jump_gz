@@ -27,16 +27,24 @@ RefGovCon::~RefGovCon()
 
 bool RefGovCon::rgc_cb(const gz::msgs::Int32 &mode_msg, jump::msgs::LowCmd &low_cmd_msg)
 {
-    bool solved = this->rgc(mode_msg.data());
+    std::cout << mode_msg.data() << std::endl;
+    low_cmd_msg.set_valid(true);
+    low_cmd_msg.mutable_qr()->add_data(1);
+    low_cmd_msg.mutable_qr()->add_data(2);
+    low_cmd_msg.mutable_dqr()->add_data(0);
+    low_cmd_msg.mutable_dqr()->add_data(1);
 
-    if (solved)
-    {
-        low_cmd_msg.Clear();
-        _toolsGz.EigenVec2VecMsg(this->qr, low_cmd_msg.mutable_qr());
-        return 1;
-    }
-    else
-        return 0;
+    return true;
+    // bool solved = this->rgc(mode_msg.data());
+
+    // if (solved)
+    // {
+    //     low_cmd_msg.Clear();
+    //     _toolsGz.EigenVec2VecMsg(this->qr, low_cmd_msg.mutable_qr());
+    //     return 1;
+    // }
+    // else
+    //     return 0;
 }
 
 bool RefGovCon::rgc(int mode)
