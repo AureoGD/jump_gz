@@ -27,6 +27,7 @@
 // #include "gz/custom_msgs/vector.pb.h"
 
 #include "jump/msgs/lowstates.pb.h"
+#include "jump/msgs/lowcmd.pb.h"
 
 class JumpStates : public gz::sim::System,
                    public gz::sim::ISystemConfigure,
@@ -49,9 +50,25 @@ private:
     void CreateComponents(gz::sim::v8::EntityComponentManager &_ecm,
                           gz::sim::v8::Entity _joint);
 
-    bool JumpStatesCB(const gz::msgs::Boolean &req, jump::msgs::LowStates &resp_msg);
+    bool JumpStatesCB(const gz::msgs::Boolean &req, jump::msgs::LowStates &rep);
 
-    bool testeCB(const gz::msgs::Boolean &req, gz::msgs::Boolean &resp_msg);
+    void TouchCB(const gz::msgs::Wrench &msg);
+
+    void HFE_TorqueCB(const gz::msgs::Wrench &msg);
+
+    void KFE_TorqueCB(const gz::msgs::Wrench &msg);
+
+    void LowCmdCB(const jump::msgs::LowCmd &_msg);
+
+    // bool testeCB(const gz::msgs::Boolean &req, gz::msgs::Boolean &rep);
+
+    std::string ts_topic = "/JumpRobot/foot/force_torque";
+
+    std::string hfe_f_topic = "/JumpRobot/hfe/force_torque";
+
+    std::string kfe_f_topic = "/JumpRobot/kfe/force_torque";
+
+    std::string low_level_topic_name = "jump/low_cmd";
 
     ToolsGZ _toolsGz;
 
@@ -65,11 +82,15 @@ private:
 
     std::vector<gz::sim::v8::Entity> joint_entities;
 
-    Eigen::VectorXd q, dq, tau;
+    Eigen::VectorXd q, dq, tau, qr, dqr;
 
     std::mutex JumpStatesMutex;
 
     bool b_var = false;
+
+    bool touch_st = false;
+    bool touch_st_cb = false;
+    bool last_touch_state_cb = false;
 };
 
 #endif

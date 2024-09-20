@@ -18,6 +18,8 @@ void JumpLowControl::Configure(const gz::sim::Entity &_entity,
                                gz::sim::EntityComponentManager &_ecm,
                                gz::sim::EventManager &_eventMgr)
 {
+    ecm_ = &_ecm;
+
     this->model = gz::sim::Model(_entity);
 
     this->model_name = this->model.Name(_ecm);
@@ -64,19 +66,29 @@ void JumpLowControl::Configure(const gz::sim::Entity &_entity,
 
     this->joint_names.push_back("base");
 
-    this->qr << -3.14 * 60 / 180, 3.14 * 120 / 180;
+    this->qr << -3.14 * 30 / 180, 3.14 * 50 / 180;
 
-    this->q0 << -3.14 * 30 / 180, 3.14 * 120 / 180, 0.45;
+    this->q0 << -3.14 * 50 / 180, 3.14 * 80 / 180, 0.6;
 
-    this->SetJointPos(_ecm, this->q0);
+    // this->SetJointPos(_ecm, this->q0);
+    this->SetJointPos(this->q0);
 
-    if (this->_Node.Subscribe<JumpLowControl, jump::msgs::LowStates>(this->low_level_topic_name, &JumpLowControl::LowCmdCB, this))
+    if (this->_Node.Subscribe<JumpLowControl, jump::msgs::LowCmd>(this->low_level_topic_name, &JumpLowControl::LowCmdCB, this))
     {
-        std::cout << "The topic [" << this->low_level_topic_name << "] was created" << std::endl;
+        std::cout << "Subscribed to the topic [" << this->low_level_topic_name << "]" << std::endl;
     }
     else
     {
-        std::cout << "Error to create the topic [" << this->low_level_topic_name << "]" << std::endl;
+        std::cout << "Error to subscribe to the topic [" << this->low_level_topic_name << "]" << std::endl;
+    }
+
+    if (this->_Node.Advertise<JumpLowControl, gz::msgs::Double_V, gz::msgs::Boolean>(this->reset_pos_service_name, &JumpLowControl::ResetJointsPosCB, this))
+    {
+        std::cout << "The service [" << this->reset_pos_service_name << "] was created" << std::endl;
+    }
+    else
+    {
+        std::cout << "Error advertising service [" << this->reset_pos_service_name << "]" << std::endl;
     }
 }
 
@@ -104,18 +116,28 @@ void JumpLowControl::CreateComponents(gz::sim::v8::EntityComponentManager &_ecm,
     }
 }
 
-void JumpLowControl::SetJointPos(gz::sim::v8::EntityComponentManager &_ecm, Eigen::VectorXd &_q)
+void JumpLowControl::SetJointPos(Eigen::VectorXd &_q)
 {
     for (int idx = 0; idx < 3; idx++)
     {
-        _ecm.SetComponentData<gz::sim::v8::components::JointPositionReset>(this->model.JointByName(_ecm, this->joint_names[idx]), {(_q)(idx)});
+        this->ecm_->SetComponentData<gz::sim::v8::components::JointPositionReset>(this->model.JointByName(*this->ecm_, this->joint_names[idx]), {(_q)(idx)});
     }
 }
 
-void JumpLowControl::LowCmdCB(const jump::msgs::LowStates &_msg)
+bool JumpLowControl::ResetJointsPosCB(const gz::msgs::Double_V &req, gz::msgs::Boolean &rep)
 {
+    _toolsGz.VecMsg2VecEigen(req, &this->q0);
+    this->SetJointPos(this->q0);
+    rep.set_data(true);
+    return true;
+}
+
+void JumpLowControl::LowCmdCB(const jump::msgs::LowCmd &_msg)
+{
+    std::cout << "hey, low controller" << std::endl;
     std::lock_guard<std::mutex> lock(this->JumpControlMutex);
-    _toolsGz.VecMsg2VecEigen(_msg.q(), &this->qr);
+    _toolsGz.VecMsg2VecEigen(_msg.qr(), &this->qr);
+    // _toolsGz.VecMsg2VecEigen(_msg.dq(), &this->dqr);
 }
 
 void JumpLowControl::PreUpdate(const gz::sim::UpdateInfo &_info,
@@ -144,29 +166,6 @@ void JumpLowControl::PreUpdate(const gz::sim::UpdateInfo &_info,
         *forceComp = gz::sim::v8::components::JointForceCmd({tau});
     }
     this->lastUpdateTime = _info.simTime;
-    // variavel_qlqr += 1;
-    // if (variavel_qlqr == 1000)
-    // {
-
-    //     // reuisitando no mesmo tópico do adapter:
-    //     bool result;
-    //     gz::msgs::Boolean msg;
-    //     gz::msgs::Boolean _req;
-    //     _req.set_data(false);
-    //     msg.Clear();
-    //     bool executed = _Node.Request("ser/teste", _req, 500, msg, result);
-    //     std::cout << executed << ", " << result << ", " << msg.data() << std::endl;
-    //     variavel_qlqr = 0;
-
-    //     // gz::msgs::Boolean req_;
-    //     // jump::msgs::LowStates msg;
-
-    //     // requisição direta no serviço dos estados - funciona
-    //     // bool result;
-    //     // bool executed = this->_Node.Request("/jump/low_state", req_, 5, msg, result);
-    //     // std::cout << result << std::endl;
-    //     // std::cout << msg.mutable_q()->data(1) << std::endl;
-    // }
 }
 
 GZ_ADD_PLUGIN(JumpLowControl,

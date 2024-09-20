@@ -8,4 +8,7 @@ message LowStates {
     gz.msgs.Double_V q =1;
     gz.msgs.Double_V dq =2;
     gz.msgs.Double_V tau=3;  
+    gz.msgs.Double_V qr =4;
+    gz.msgs.Double_V dqr=5;  
+    bool fc = 6;
 }

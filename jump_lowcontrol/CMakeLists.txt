@@ -40,6 +40,7 @@ target_link_libraries(${PROJECT_NAME}
 		${GZ-MATH_LIBRARIES}
 		OsqpEigen::OsqpEigen
 		jump_cmsgs-msgs
+			tools_gz	
 )	
 
 install(

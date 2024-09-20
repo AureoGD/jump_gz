@@ -10,6 +10,12 @@ JumpStates::JumpStates()
 
     this->tau.resize(3, 1);
     this->tau.setZero();
+
+    this->qr.resize(2, 1);
+    this->qr.setZero();
+
+    this->dqr.resize(2, 1);
+    this->dqr.setZero();
 }
 
 JumpStates::~JumpStates()
@@ -43,14 +49,38 @@ void JumpStates::Configure(const gz::sim::Entity &_entity,
 
     // /////////////////////////////////////////////////////////////////
 
-    if (this->_Node.Advertise<JumpStates, gz::msgs::Boolean, gz::msgs::Boolean>("ser/teste", &JumpStates::testeCB, this))
+    if (this->_Node.Subscribe<JumpStates, gz::msgs::Wrench>(this->ts_topic, &JumpStates::TouchCB, this))
     {
-        std::cout << "The service [" << "ser/teste" << "] was created" << std::endl;
+        std::cout << "Subscribed to topic [" << this->ts_topic << "]" << std::endl;
+    }
+
+    if (this->_Node.Subscribe<JumpStates, gz::msgs::Wrench>(this->hfe_f_topic, &JumpStates::HFE_TorqueCB, this))
+    {
+        std::cout << "Subscribed to topic [" << this->hfe_f_topic << "]" << std::endl;
+    }
+
+    if (this->_Node.Subscribe<JumpStates, gz::msgs::Wrench>(this->kfe_f_topic, &JumpStates::KFE_TorqueCB, this))
+    {
+        std::cout << "Subscribed to topic [" << this->kfe_f_topic << "]" << std::endl;
+    }
+
+    // /////////////////////////////////////////////////
+
+    if (this->_Node.Subscribe<JumpStates, jump::msgs::LowCmd>(this->low_level_topic_name, &JumpStates::LowCmdCB, this))
+    {
+        std::cout << "Subscribed to the topic [" << this->low_level_topic_name << "]" << std::endl;
     }
     else
     {
-        std::cout << "Error advertising service [" << this->service_name << "]" << std::endl;
+        std::cout << "Error to subscribe to the topic  [" << this->low_level_topic_name << "]" << std::endl;
     }
+}
+
+void JumpStates::LowCmdCB(const jump::msgs::LowCmd &_msg)
+{
+    std::lock_guard<std::mutex> lock(this->JumpStatesMutex);
+    _toolsGz.VecMsg2VecEigen(_msg.qr(), &this->qr);
+    _toolsGz.VecMsg2VecEigen(_msg.dqr(), &this->dqr);
 }
 
 void JumpStates::CreateComponents(gz::sim::v8::EntityComponentManager &_ecm,
@@ -74,36 +104,43 @@ void JumpStates::CreateComponents(gz::sim::v8::EntityComponentManager &_ecm,
                                      gz::sim::v8::components::JointForce().TypeId()))
     {
         _ecm.CreateComponent(_joint, gz::sim::v8::components::JointForce());
-        std::cout << "Create a 'Force Component' for the joint "
-                  << joint_names << ", component: "
-                  << _joint << std::endl;
     }
 }
 
-bool JumpStates::JumpStatesCB(const gz::msgs::Boolean &req, jump::msgs::LowStates &resp_msg)
+bool JumpStates::JumpStatesCB(const gz::msgs::Boolean &req, jump::msgs::LowStates &rep)
 {
-    // std::cout << "hei" << std::endl;
     std::lock_guard<std::mutex> lock(this->JumpStatesMutex);
-    _toolsGz.EigenVec2VecMsg(this->q, resp_msg.mutable_q());
-    _toolsGz.EigenVec2VecMsg(this->dq, resp_msg.mutable_dq());
-    // _toolsGz.EigenVec2VecMsg(this->tau, resp_msg.mutable_tau());
-    // std::cout << this->service_name << "Service CB. Data: " << resp_msg.q().data(1) << std::endl;
+    _toolsGz.EigenVec2VecMsg(this->q, rep.mutable_q());
+    _toolsGz.EigenVec2VecMsg(this->dq, rep.mutable_dq());
+    _toolsGz.EigenVec2VecMsg(this->tau, rep.mutable_tau());
+    _toolsGz.EigenVec2VecMsg(this->qr, rep.mutable_qr());
+    _toolsGz.EigenVec2VecMsg(this->dqr, rep.mutable_dqr());
+    rep.set_fc(this->touch_st);
 
     return true;
 }
 
-bool JumpStates::testeCB(const gz::msgs::Boolean &req, gz::msgs::Boolean &resp_msg)
+void JumpStates::TouchCB(const gz::msgs::Wrench &msg)
 {
-    if (req.data())
-        std::cout << "Req true" << std::endl;
-
+    std::lock_guard<std::mutex> lock(this->JumpStatesMutex);
+    if (abs(msg.force().z()) > 10)
+        this->touch_st_cb = true;
     else
-        std::cout << "Req false" << std::endl;
-    b_var = !b_var;
-    resp_msg.set_data(b_var);
-    std::cout << "'ser/teste' data: " << resp_msg.data() << std::endl;
+        this->touch_st_cb = false;
+    this->touch_st = this->touch_st_cb * this->last_touch_state_cb;
+    this->last_touch_state_cb = this->touch_st_cb;
+}
 
-    return true;
+void JumpStates::HFE_TorqueCB(const gz::msgs::Wrench &msg)
+{
+    std::lock_guard<std::mutex> lock(this->JumpStatesMutex);
+    this->tau(1) = msg.torque().z();
+}
+
+void JumpStates::KFE_TorqueCB(const gz::msgs::Wrench &msg)
+{
+    std::lock_guard<std::mutex> lock(this->JumpStatesMutex);
+    this->tau(2) = msg.torque().z();
 }
 
 void JumpStates::PostUpdate(const gz::sim::UpdateInfo &_info,
@@ -125,28 +162,12 @@ void JumpStates::PostUpdate(const gz::sim::UpdateInfo &_info,
         const auto *jointVelocity = _ecm.Component<gz::sim::v8::components::JointVelocity>(this->joint_entities[idx]);
         const auto *jointTorque = _ecm.Component<gz::sim::v8::components::JointForce>(this->joint_entities[idx]);
 
-        // if (jointTorque == nullptr)
-        //     std::cout << "Null" << std::endl;
-
-        // if (!jointTorque->Data().empty())
-        //     std::cout << jointTorque->Data()[0] << std::endl;
-        // std::cout << jointTorque->Data().size() << std::endl;
-
-        // if (jointPositions == nullptr || jointPositions->Data().empty() ||
-        //     jointVelocity == nullptr || jointVelocity->Data().empty() ||
-        //     jointTorque == nullptr || jointTorque->Data().empty())
-        // {
-
-        //     return;
-        // }
-
         if (jointPositions == nullptr || jointPositions->Data().empty() ||
             jointVelocity == nullptr || jointVelocity->Data().empty())
             return;
 
         this->q[idx] = jointPositions->Data()[0];
         this->dq[idx] = jointVelocity->Data()[0];
-        // this->tau[idx] = jointTorque->Data()[0];
     }
 }
 

@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
+
   <world name="default">
     <physics name="1ms" type="ignored">
       <max_step_size>0.001</max_step_size>
@@ -18,6 +19,7 @@
       </attenuation>
       <direction>-0.5 0.1 -0.9</direction>
     </light>
+
     <model name="ground_plane">
       <static>true</static>
       <link name="link">
@@ -44,6 +46,7 @@
         </visual>
       </link>
     </model>
+
     <model name='jumpRobot'>
       <link name="body_a">
         <!-- <pose>0 0 0.75 0 0 0</pose> -->
@@ -170,12 +173,6 @@
               <uri>model://home/agd/jump_model/meshes/foot.dae</uri>
             </mesh>
           </geometry>
-          <!-- <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/GreenTransparent</name>
-            </script>
-          </material> -->
         </visual>
         <collision name="foot_collision">
           <pose>0 0 0 0 0 0</pose>
@@ -205,20 +202,26 @@
             <izz>0</izz>
           </inertia>
         </inertial>
-        <!-- <sensor name='sensor_contact' type='contact'>
-          <contact>
-            <collision>foot_collision</collision>
-          </contact>
-          <always_on>1</always_on>
-        </sensor> -->
       </link>
+      
       <joint name="base" type="prismatic">
         <parent>world</parent>
         <child>body_a</child>
         <axis>
           <xyz>0 0 1</xyz>
         </axis>
+                <!-- <sensor name="force_torque_sensor" type="force_torque">
+          <always_on>true</always_on>
+          <update_rate>100</update_rate>
+          <visualize>true</visualize>
+          <topic>/JumpRobot/base/force_torque</topic>
+          <force_torque>
+            <frame>sensor</frame>
+            <measure_direction>parent_to_child</measure_direction>
+          </force_torque>
+        </sensor> -->
       </joint>
+
       <joint name="hfe" type="revolute">
         <pose>0 0 0 -1.570796326794896558 1.570796326794896558 0</pose>
         <parent>body_a</parent>
@@ -231,7 +234,18 @@
             <!-- <velocity>100</velocity> -->
           </limit>
         </axis>
+        <sensor name="force_torque_sensor" type="force_torque">
+          <always_on>true</always_on>
+          <update_rate>100</update_rate>
+          <visualize>true</visualize>
+          <topic>/JumpRobot/hfe/force_torque</topic>
+          <force_torque>
+            <frame>sensor</frame>
+            <measure_direction>parent_to_child</measure_direction>
+          </force_torque>
+        </sensor>
       </joint>
+
       <joint name="kfe" type="revolute">
         <pose>0 0 0 -1.570796326794896558 1.570796326794896558 0</pose>
         <parent>upper_leg_a</parent>
@@ -244,7 +258,18 @@
             <!-- <velocity>100</velocity> -->
           </limit>
         </axis>
+        <sensor name="force_torque_sensor" type="force_torque">
+          <always_on>true</always_on>
+          <update_rate>100</update_rate>
+          <visualize>true</visualize>
+          <topic>/JumpRobot/kfe/force_torque</topic>
+          <force_torque>
+            <frame>sensor</frame>
+            <measure_direction>parent_to_child</measure_direction>
+          </force_torque>
+        </sensor>
       </joint>
+
       <joint name="fft" type="fixed">
         <pose>0 0 0 -1.570796326794896558 1.570796326794896558 0</pose>
         <parent>lower_leg_a</parent>
@@ -260,6 +285,8 @@
           </force_torque>
         </sensor>
       </joint>
+
+
       <plugin
         filename="gz-sim-forcetorque-system"
         name="gz::sim::systems::ForceTorque">

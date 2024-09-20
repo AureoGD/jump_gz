@@ -21,6 +21,7 @@
 #include <OsqpEigen/OsqpEigen.h>
 
 #include "jump/msgs/lowstates.pb.h"
+#include "jump/msgs/lowcmd.pb.h"
 
 #include "tools_gz/tools_gz.h"
 
@@ -44,16 +45,21 @@ public:
                    gz::sim::EntityComponentManager &_ecm);
 
     // void Reset(const gz::sim::UpdateInfo &_info,
-    //                gz::sim::EntityComponentManager &_ecm);
+    //            gz::sim::EntityComponentManager &_ecm) override;
+
 private:
     void CreateComponents(gz::sim::v8::EntityComponentManager &_ecm,
                           gz::sim::v8::Entity _joint);
 
-    void SetJointPos(gz::sim::v8::EntityComponentManager &_ecm, Eigen::VectorXd &_q);
+    void SetJointPos(Eigen::VectorXd &_q);
 
-    void LowCmdCB(const jump::msgs::LowStates &_msg);
+    void LowCmdCB(const jump::msgs::LowCmd &_msg);
 
-    std::string low_level_topic_name = "jump/Control/low_cmd";
+    bool ResetJointsPosCB(const gz::msgs::Double_V &req, gz::msgs::Boolean &rep);
+
+    std::string low_level_topic_name = "jump/low_cmd";
+
+    std::string reset_pos_service_name = "jump/Control/reset_jpos";
 
     double kp, kd;
 
@@ -78,6 +84,8 @@ private:
     std::mutex JumpControlMutex;
 
     int variavel_qlqr = 0;
+
+    gz::sim::EntityComponentManager *ecm_;
 };
 
 #endif
