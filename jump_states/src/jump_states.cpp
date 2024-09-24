@@ -27,6 +27,8 @@ void JumpStates::Configure(const gz::sim::Entity &_entity,
                            gz::sim::EntityComponentManager &_ecm,
                            gz::sim::EventManager &_eventMgr)
 {
+    std::cout << "========================= States Publisher ========================" << std::endl;
+
     this->model = gz::sim::Model(_entity);
 
     // this->model_name = this->model.Name(_ecm);
@@ -51,17 +53,17 @@ void JumpStates::Configure(const gz::sim::Entity &_entity,
 
     if (this->_Node.Subscribe<JumpStates, gz::msgs::Wrench>(this->ts_topic, &JumpStates::TouchCB, this))
     {
-        std::cout << "Subscribed to topic [" << this->ts_topic << "]" << std::endl;
+        std::cout << "Subscribed to the topic [" << this->ts_topic << "]" << std::endl;
     }
 
     if (this->_Node.Subscribe<JumpStates, gz::msgs::Wrench>(this->hfe_f_topic, &JumpStates::HFE_TorqueCB, this))
     {
-        std::cout << "Subscribed to topic [" << this->hfe_f_topic << "]" << std::endl;
+        std::cout << "Subscribed to the topic [" << this->hfe_f_topic << "]" << std::endl;
     }
 
     if (this->_Node.Subscribe<JumpStates, gz::msgs::Wrench>(this->kfe_f_topic, &JumpStates::KFE_TorqueCB, this))
     {
-        std::cout << "Subscribed to topic [" << this->kfe_f_topic << "]" << std::endl;
+        std::cout << "Subscribed to the topic [" << this->kfe_f_topic << "]" << std::endl;
     }
 
     // /////////////////////////////////////////////////
@@ -74,6 +76,7 @@ void JumpStates::Configure(const gz::sim::Entity &_entity,
     {
         std::cout << "Error to subscribe to the topic  [" << this->low_level_topic_name << "]" << std::endl;
     }
+    std::cout << "===================================================================" << std::endl;
 }
 
 void JumpStates::LowCmdCB(const jump::msgs::LowCmd &_msg)

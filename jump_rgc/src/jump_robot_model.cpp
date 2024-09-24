@@ -37,10 +37,10 @@ void JumpRobot::UpdateSysMatrices()
 
     // evaluate the CoM position (w.r.t)
 
-    this->com_pos(0, 0) = (this->HT_com1(0, 3) * this->m_upr + this->HT_com2(0, 3) * this->m_lwr + this->m_base * this->base_pos(0, 0)) / this->m_total;
-    this->com_pos(1, 0) = (this->HT_com1(2, 3) * this->m_upr + this->HT_com2(2, 3) * this->m_lwr + this->m_base * this->base_pos(1, 0)) / this->m_total;
+    this->com_pos(0, 0) = (this->HT_com1(0, 3) * this->m_upr + this->HT_com2(0, 3) * this->m_lwr) / this->m_total;
+    this->com_pos(1, 0) = (this->HT_com1(2, 3) * this->m_upr + this->HT_com2(2, 3) * this->m_lwr) / this->m_total;
 
-    this->com_pos_w = this->base_pos + this->com_pos;
+    this->com_pos_w = this->base_pos + (this->com_pos * this->m_base / this->m_total);
 
     this->J_com = (this->m_upr * this->J_com1 + this->m_lwr * this->J_com2) / this->m_total;
     this->com_vel = this->J_com * (*dq);

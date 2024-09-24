@@ -4,4 +4,8 @@ import os
 import random
 import numpy as np
 
-print(np.random.uniform(0, 1, (3, 1)))
+
+a = True
+v = np.array([a], dtype=np.double)
+v = np.array([a])
+print(v)

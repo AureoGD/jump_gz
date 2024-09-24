@@ -18,13 +18,16 @@ void JumpLowControl::Configure(const gz::sim::Entity &_entity,
                                gz::sim::EntityComponentManager &_ecm,
                                gz::sim::EventManager &_eventMgr)
 {
+
+    std::cout << "========================== Low Controller =========================" << std::endl;
+
     ecm_ = &_ecm;
 
     this->model = gz::sim::Model(_entity);
 
     this->model_name = this->model.Name(_ecm);
 
-    std::cout << this->model_name << std::endl;
+    // std::cout << this->model_name << std::endl;
 
     this->kp = _sdf->Get<double>("kp");
 
@@ -73,15 +76,6 @@ void JumpLowControl::Configure(const gz::sim::Entity &_entity,
     // this->SetJointPos(_ecm, this->q0);
     this->SetJointPos(this->q0);
 
-    if (this->_Node.Subscribe<JumpLowControl, jump::msgs::LowCmd>(this->low_level_topic_name, &JumpLowControl::LowCmdCB, this))
-    {
-        std::cout << "Subscribed to the topic [" << this->low_level_topic_name << "]" << std::endl;
-    }
-    else
-    {
-        std::cout << "Error to subscribe to the topic [" << this->low_level_topic_name << "]" << std::endl;
-    }
-
     if (this->_Node.Advertise<JumpLowControl, gz::msgs::Double_V, gz::msgs::Boolean>(this->reset_pos_service_name, &JumpLowControl::ResetJointsPosCB, this))
     {
         std::cout << "The service [" << this->reset_pos_service_name << "] was created" << std::endl;
@@ -90,6 +84,16 @@ void JumpLowControl::Configure(const gz::sim::Entity &_entity,
     {
         std::cout << "Error advertising service [" << this->reset_pos_service_name << "]" << std::endl;
     }
+
+    if (this->_Node.Subscribe<JumpLowControl, jump::msgs::LowCmd>(this->low_level_topic_name, &JumpLowControl::LowCmdCB, this))
+    {
+        std::cout << "Subscribed to the topic [" << this->low_level_topic_name << "]" << std::endl;
+    }
+    else
+    {
+        std::cout << "Error to subscribe to the topic [" << this->low_level_topic_name << "]" << std::endl;
+    }
+    std::cout << "===================================================================" << std::endl;
 }
 
 void JumpLowControl::CreateComponents(gz::sim::v8::EntityComponentManager &_ecm,

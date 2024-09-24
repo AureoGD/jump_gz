@@ -31,13 +31,13 @@ public:
     bool rgc_cb(const gz::msgs::Int32 &mode_msg, jump::msgs::LowCmd &low_cmd_msg);
 
 private:
-    std::string service_name = "jump/RGC/low_cmd";
+    std::string service_name = "JumpRobot/RGC/lowCmd";
 
     Op_Wrapper _optProblem;
 
     Eigen::Matrix<double, 2, 1> b, db, q, dq, qr;
 
-    Eigen::VectorXd msg_q, msg_dq;
+    Eigen::VectorXd msg_q, msg_dq, msg_qr;
 
     JumpRobot _JumpRobot;
 

@@ -62,21 +62,21 @@ private:
 
     // bool testeCB(const gz::msgs::Boolean &req, gz::msgs::Boolean &rep);
 
-    std::string ts_topic = "/JumpRobot/foot/force_torque";
+    std::string ts_topic = "/JumpRobot/foot/torqueSensor";
 
-    std::string hfe_f_topic = "/JumpRobot/hfe/force_torque";
+    std::string hfe_f_topic = "/JumpRobot/hfe/torqueSensor";
 
-    std::string kfe_f_topic = "/JumpRobot/kfe/force_torque";
+    std::string kfe_f_topic = "/JumpRobot/kfe/torqueSensor";
 
-    std::string low_level_topic_name = "jump/low_cmd";
+    std::string low_level_topic_name = "/JumpRobot/Control/lowCmd";
+
+    std::string service_name = "/JumpRobot/States/lowState";
 
     ToolsGZ _toolsGz;
 
     gz::transport::Node _Node;
 
     gz::sim::v8::Model model;
-
-    std::string service_name = "jump/low_state";
 
     std::string model_name;
 
