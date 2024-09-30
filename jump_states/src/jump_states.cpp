@@ -49,6 +49,16 @@ void JumpStates::Configure(const gz::sim::Entity &_entity,
         std::cout << "Error advertising service [" << this->service_name << "]" << std::endl;
     }
 
+    ///// srv teste
+
+    if (this->_Node.Advertise<JumpStates, gz::msgs::Boolean, gz::msgs::Boolean>("srv/teste", &JumpStates::testeCB, this))
+    {
+        std::cout << "The service [ srv/teste ] was created" << std::endl;
+    }
+    else
+    {
+        std::cout << "Error advertising service [ srv/teste ]" << std::endl;
+    }
     // /////////////////////////////////////////////////////////////////
 
     if (this->_Node.Subscribe<JumpStates, gz::msgs::Wrench>(this->ts_topic, &JumpStates::TouchCB, this))
@@ -77,6 +87,13 @@ void JumpStates::Configure(const gz::sim::Entity &_entity,
         std::cout << "Error to subscribe to the topic  [" << this->low_level_topic_name << "]" << std::endl;
     }
     std::cout << "===================================================================" << std::endl;
+}
+
+bool JumpStates::testeCB(const gz::msgs::Boolean &req, gz::msgs::Boolean &rep)
+{
+    std::cout << req.data() << std::endl;
+    rep.set_data(true);
+    return true;
 }
 
 void JumpStates::LowCmdCB(const jump::msgs::LowCmd &_msg)
@@ -171,6 +188,23 @@ void JumpStates::PostUpdate(const gz::sim::UpdateInfo &_info,
 
         this->q[idx] = jointPositions->Data()[0];
         this->dq[idx] = jointVelocity->Data()[0];
+    }
+
+    if (!this->first_scan)
+    {
+        first_scan = true;
+
+        jump::msgs::LowCmd rep;
+        bool result;
+        bool executed = this->_Node.Request("JumpRobot/Control/qrReq", 5000, rep, result);
+        if (executed)
+            _toolsGz.VecMsg2VecEigen(rep.qr(), &this->qr);
+
+        else
+        {
+            std::cout << "qr request error" << std::endl;
+            this->qr << this->q(1), this->q(2);
+        }
     }
 }
 

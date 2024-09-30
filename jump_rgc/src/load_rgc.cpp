@@ -30,14 +30,12 @@ bool LoadRGC::Load(const tinyxml2::XMLElement *_elem)
 {
     const tinyxml2::XMLElement *elem;
 
-    std::cout << "hey" << std::endl;
-
     elem = _elem->FirstChildElement("action_service");
 
     if (elem)
         this->service_name = elem->GetText();
 
-    std::cout << this->service_name << std::endl;
+    // std::cout << this->service_name << std::endl;
 
     return true;
 }

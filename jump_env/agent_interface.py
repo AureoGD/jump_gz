@@ -5,6 +5,8 @@ import time
 from icecream import ic
 import numpy as np
 
+from threading import Lock
+
 
 from gz.transport13 import Node
 from gz.msgs10.boolean_pb2 import Boolean
@@ -22,6 +24,8 @@ from jump.msgs.lowstates_pb2 import LowStates
 
 import jump_model
 
+# export GZ_DESCRIPTOR_PATH=/home/agd/jump_gz/jump_cmsgs/build
+
 
 class AgenteInterface:
     def __init__(self):
@@ -29,6 +33,12 @@ class AgenteInterface:
         self.robot_model = jump_model.JumpModel()
 
         self.step_length = self.robot_model.step_length
+        self.N_ACTIONS = self.robot_model.n_actions
+        self.N_OBSERVATIONS = self.robot_model.nn_states_input_dim
+        self.obsLowValue = self.robot_model.obs_min
+        self.obsHighValue = self.robot_model.obs_max
+
+        self.ep = 0
 
         self.node = Node()
 
@@ -60,16 +70,28 @@ class AgenteInterface:
             np.zeros((1, len(self.robot_model.joint_name))).tolist()[0]
         )
 
+        self.wainting_rgc = False
+
+        self.rgc_lowcmd = LowCmd()
+        self.node.subscribe(LowCmd, "/JumpRobot/RGC/lowcmd", self.rgc_cb)
+        self.valid_rep = False
+        self.mutex = Lock()
+
     def action(self, action):  # call the service for new action (requeste new qr)
         self.req_action.data = action
         self.robot_model.actionList(action)
+        self.rep_bool = Boolean()
 
-        result, self.rep_lowCmd = self.node.request(
-            "JumpRobot/RGC/lowCmd", self.req_action, Int32, LowCmd, 5000
+        result, self.rep_bool = self.node.request(
+            "JumpRobot/RGC/reqsol", self.req_action, Int32, Boolean, 5000
         )
 
-        if result:
-            self.robot_model.solver_status = self.rep_lowCmd.valid.data()
+        if self.rep_bool.data and result:
+            self.wainting_rgc = True
+            while self.wainting_rgc:
+                pass
+
+            print(self.rep_lowCmd)
             if not self.newRef_pub.publish(self.rep_lowCmd):
                 ic("--- New reference publish error ---")
 
@@ -112,6 +134,7 @@ class AgenteInterface:
         )
 
         time.sleep(0.003)
+        self.robot_model.resetVars()
 
         return self.observation()
 
@@ -133,33 +156,21 @@ class AgenteInterface:
     def done(self):
         return self.robot_model.done()
 
-    # def requestSensorSt(self):
-    #     self.req_boolean.data = True
+    def incrementStep(self):
+        self.robot_model.self.steps += 1
 
-    #     result, self.rep_lowStates = self.node.request(
-    #         "/JumpRobot/States/lowState", self.req_boolean, Boolean, LowStates, 5000
-    #     )
-
-    #     ic("Result:", result)
-    #     #  update robot variables
-    #     self.robot_model.robotStates(self.rep_lowStates)
-
-    # def newRef(self):
-    #     msg_test = LowCmd()
-    #     msg_test.qr.data.append(1)
-    #     if not self.newRef_pub.publish(msg_test):
-    #         ic("--- New reference publish error ---")
+    def rgc_cb(self, msg: LowCmd):
+        with self.mutex:
+            if msg.valid:
+                self.valid_rep = True
+            else:
+                self.valid_rep = False
+            self.rep_lowCmd = msg
+            self.wainting_rgc = False
 
 
 ag = AgenteInterface()
-# ag.reset()
-print(ag.observation())
-
-# while 1:
-#     ag.newRef()
-#     time.sleep(1)
-#     ic("hey")
-# ag.requestSensorSt()
-# ag.action(11)
-# ag.reset()
-# ag.requestSensorSt()
+time.sleep(1)
+while 1:
+    ag.action(1)
+    time.sleep(0.01)

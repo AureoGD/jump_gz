@@ -6,24 +6,31 @@ from gz.transport13 import Node
 from gz.msgs10.world_control_pb2 import WorldControl
 from gz.msgs10.boolean_pb2 import Boolean
 
+import agent_interface
+
 
 class GzTrainning(gym.Env):
-    def __init__(self, N_ACTIONS, N_OBSERVATIONS):
-        super().__init__()
+    def __init__(
+        self,
+        render_mode=None,
+    ):
+        # super().__init__()
         self.node = Node()
-        # cria um objeto do que é desejado simular
-        # self.model = JumpController()
-        # self.action_space = spaces.Discrete(N_ACTIONS)
-        # self.observation_space = spaces.Box(low=0, high=1, shape=(N_OBSERVATIONS,), dtype=np.float32)
+        # create the model interface method
+        self.model = agent_interface.AgenteInterface()
 
-        # talvez algo do tipo
-        # self.action_space = spaces.Discrete(model.N_ACTIONS)
-        # self.observation_space = spaces.Box(low=model.lowValue, high=model.highValue, shape=(model.N_OBSERVATIONS,), dtype=np.float32)
+        self.action_space = spaces.Discrete(self.model.N_ACTIONS)
+        self.observation_space = spaces.Box(
+            low=self.model.obsLowValue,
+            high=self.model.obsHighValue,
+            shape=(self.model.N_OBSERVATIONS,),
+            dtype=np.double,
+        )
 
         self.world_control_msg = WorldControl()
         self.request_info = Boolean()
         self.timeout_reset = 1000
-        self.world_control_msg.multi_step = 10  # model.step_size
+        self.world_control_msg.multi_step = self.model.step_length  # model.step_size
         self.world_control_msg.step = True
         self.world_control_msg.pause = True
 
@@ -33,7 +40,7 @@ class GzTrainning(gym.Env):
 
     def step(self, action):
         # envia a ação para o gz, ex:
-        # self.model.action(action)
+        self.model.action(action)
 
         # simula o ambiente por algumas interações
         result, self.response_reset = self.node.request(
@@ -44,19 +51,22 @@ class GzTrainning(gym.Env):
             self.timeout_reset,
         )
 
-        # self.observation = self.model.observation()
-        # self.reward = self.model.reward()
-        # self.done = self.model.done()
-        info = True
+        self.observation = self.model.observation()
+        self.reward = self.model.reward()
+        self.terminated = self.model.done()
 
-        return self.observation, self.reward, self.done, info
+        truncated = self.terminated
+        info = {}
 
-    def reset(self):
-        # self.model.reset()
-        info = 0
-        return self.observation, self.reward, self.done, info
+        return self.observation, self.reward, self.terminated, truncated, info
+
+    def reset(self, seed=None):
+        super().reset(seed=seed)
+        self.observation = self.model.reset()
+        info = {"ep": self.model.ep}
+        return self.observation, info
 
 
-tes = GzTrainning(5, 2)
+# env = GzTrainning()
 
-tes.step(2)
+# env.step(0)

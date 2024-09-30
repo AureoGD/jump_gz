@@ -76,6 +76,7 @@ void JumpLowControl::Configure(const gz::sim::Entity &_entity,
     // this->SetJointPos(_ecm, this->q0);
     this->SetJointPos(this->q0);
 
+    // service to put the robot at new pose
     if (this->_Node.Advertise<JumpLowControl, gz::msgs::Double_V, gz::msgs::Boolean>(this->reset_pos_service_name, &JumpLowControl::ResetJointsPosCB, this))
     {
         std::cout << "The service [" << this->reset_pos_service_name << "] was created" << std::endl;
@@ -85,6 +86,17 @@ void JumpLowControl::Configure(const gz::sim::Entity &_entity,
         std::cout << "Error advertising service [" << this->reset_pos_service_name << "]" << std::endl;
     }
 
+    // service that request current reference
+    if (this->_Node.Advertise<JumpLowControl, gz::msgs::Empty, jump::msgs::LowCmd>(this->req_qr_service_name, &JumpLowControl::qrReqCB, this))
+    {
+        std::cout << "The service [" << this->req_qr_service_name << "] was created" << std::endl;
+    }
+    else
+    {
+        std::cout << "Error advertising service [" << this->req_qr_service_name << "]" << std::endl;
+    }
+
+    // subscribe to the topic for new reference
     if (this->_Node.Subscribe<JumpLowControl, jump::msgs::LowCmd>(this->low_level_topic_name, &JumpLowControl::LowCmdCB, this))
     {
         std::cout << "Subscribed to the topic [" << this->low_level_topic_name << "]" << std::endl;
@@ -136,9 +148,15 @@ bool JumpLowControl::ResetJointsPosCB(const gz::msgs::Double_V &req, gz::msgs::B
     return true;
 }
 
+bool JumpLowControl::qrReqCB(const gz::msgs::Empty &req, jump::msgs::LowCmd &rep)
+{
+    _toolsGz.EigenVec2VecMsg(this->qr, rep.mutable_qr());
+    return 1;
+}
+
 void JumpLowControl::LowCmdCB(const jump::msgs::LowCmd &_msg)
 {
-    std::cout << "hey, low controller" << std::endl;
+    // std::cout << "hey, low controller" << std::endl;
     std::lock_guard<std::mutex> lock(this->JumpControlMutex);
     _toolsGz.VecMsg2VecEigen(_msg.qr(), &this->qr);
     // _toolsGz.VecMsg2VecEigen(_msg.dq(), &this->dqr);

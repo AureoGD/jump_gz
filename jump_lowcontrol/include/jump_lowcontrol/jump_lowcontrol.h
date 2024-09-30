@@ -57,9 +57,13 @@ private:
 
     bool ResetJointsPosCB(const gz::msgs::Double_V &req, gz::msgs::Boolean &rep);
 
+    bool qrReqCB(const gz::msgs::Empty &req, jump::msgs::LowCmd &rep);
+
     std::string low_level_topic_name = "JumpRobot/Control/lowCmd";
 
     std::string reset_pos_service_name = "JumpRobot/Control/setJointPos";
+
+    std::string req_qr_service_name = "JumpRobot/Control/qrReq";
 
     double kp, kd;
 

@@ -5,6 +5,7 @@
 #include <OsqpEigen/OsqpEigen.h>
 #include "jump_rgc/jump_robot_model.h"
 
+#include <gz/transport.hh>
 #include <gz/transport/Node.hh>
 #include <gz/msgs.hh>
 #include "gz/custom_msgs/low_cmd.pb.h"
@@ -15,6 +16,8 @@
 #include "jump/msgs/lowstates.pb.h"
 #include "jump/msgs/lowcmd.pb.h"
 
+#include <thread>
+
 class RefGovCon
 {
 public:
@@ -24,14 +27,20 @@ public:
 
     bool rgc(int mode);
 
+    void thControl();
+
     bool get_states();
 
     bool update_model();
 
     bool rgc_cb(const gz::msgs::Int32 &mode_msg, jump::msgs::LowCmd &low_cmd_msg);
 
+    bool solve_cb(const gz::msgs::Int32 &req, gz::msgs::Boolean &rep);
+
 private:
     std::string service_name = "JumpRobot/RGC/lowCmd";
+
+    std::string topic_name = "JumpRobot/RGC/lowcmd";
 
     Op_Wrapper _optProblem;
 
@@ -48,5 +57,16 @@ private:
     ToolsGZ _toolsGz;
 
     bool op_retur = false;
+
+    int mode = -1;
+
+    std::mutex rgcMutex;
+
+    std::thread *rgcThread = nullptr;
+
+    bool run = false;
+
+    gz::transport::Node::Publisher rgcPub;
+    // std::shared_ptr<gz::transport::Node<jump::msgs::LowCmd>::element_typeAdvertise> rgcPub;
 };
 #endif

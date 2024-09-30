@@ -22,34 +22,84 @@ RefGovCon::RefGovCon()
         std::cout << "The service [" << '/' << this->service_name << "] was created" << std::endl;
     else
         std::cout << "Error advertising service [" << '/' << this->service_name << "]" << std::endl;
+
+    if (this->_Node.Advertise<RefGovCon, gz::msgs::Int32, gz::msgs::Boolean>("JumpRobot/RGC/reqsol", &RefGovCon::solve_cb, this))
+        std::cout << "The service [JumpRobot/RGC/reqsol] was created" << std::endl;
+    else
+        std::cout << "Error advertising service [JumpRobot/RGC/reqsol]" << std::endl;
+
+    this->rgcPub = this->_Node.Advertise<jump::msgs::LowCmd>(this->topic_name);
+    if (!this->rgcPub)
+    {
+        std::cerr << "Error advertising topic [" << this->topic_name << "]" << std::endl;
+    }
+
+    this->_optProblem.RGCConfig(1.0 / 100.0, 60, 5);
+
+    // this->rgc_pub = new gz::transport::Node::Advertise<jump::msgs::LowCmd>(this->topic_name);
+
+    this->run = true;
+    this->rgcThread = new std::thread(std::bind(&RefGovCon::thControl, this));
 }
 
 RefGovCon::~RefGovCon()
 {
+    if (this->rgcThread && this->run)
+    {
+        this->run = false;
+        this->rgcThread->join();
+    }
+    this->rgcThread = nullptr;
 }
 
 bool RefGovCon::rgc_cb(const gz::msgs::Int32 &mode_msg, jump::msgs::LowCmd &low_cmd_msg)
 {
     std::cout << mode_msg.data() << std::endl;
+    // bool solved = this->rgc(mode_msg.data());
 
-    // low_cmd_msg.set_valid(true);
-    // low_cmd_msg.mutable_qr()->add_data(1);
-    // low_cmd_msg.mutable_qr()->add_data(2);
-    // low_cmd_msg.mutable_dqr()->add_data(0);
-    // low_cmd_msg.mutable_dqr()->add_data(1);
+    if (this->rgc(mode_msg.data()))
+        low_cmd_msg.set_valid(true);
+    else
+        low_cmd_msg.set_valid(false);
 
-    bool solved = this->rgc(mode_msg.data());
-
-    // if (solved)
-    // {
-    //     low_cmd_msg.Clear();
-    //     _toolsGz.EigenVec2VecMsg(this->qr, low_cmd_msg.mutable_qr());
-    //     return 1;
-    // }
-    // else
-    //     return 0;
+    low_cmd_msg.Clear();
+    _toolsGz.EigenVec2VecMsg(this->qr, low_cmd_msg.mutable_qr());
 
     return true;
+}
+
+bool RefGovCon::solve_cb(const gz::msgs::Int32 &req, gz::msgs::Boolean &rep)
+{
+    std::lock_guard<std::mutex> lock(this->rgcMutex);
+    this->mode = req.data();
+    rep.set_data(true);
+    // std::cout << req.data() << std::endl;
+    // std::cout << "send cb response" << std::endl;
+    return true;
+}
+
+void RefGovCon::thControl()
+{
+    while (this->run)
+    {
+        if (this->mode != -1)
+        {
+            std::lock_guard<std::mutex> lock(this->rgcMutex);
+
+            if (!this->get_states())
+                std::cout << "'get_states' error";
+            else
+            {
+                this->_JumpRobot.UpdateSysMatrices();
+                bool valid_sol = _optProblem.ChooseRGCPO(mode);
+                jump::msgs::LowCmd low_cmd;
+                low_cmd.set_valid(valid_sol);
+                _toolsGz.EigenVec2VecMsg(this->qr, low_cmd.mutable_qr());
+                this->rgcPub.Publish(low_cmd);
+                this->mode = -1;
+            }
+        }
+    }
 }
 
 bool RefGovCon::rgc(int mode)
@@ -62,8 +112,7 @@ bool RefGovCon::rgc(int mode)
 
     this->_JumpRobot.UpdateSysMatrices();
 
-    op_retur = _optProblem.ChooseRGCPO(mode);
-    return 1;
+    return _optProblem.ChooseRGCPO(mode);
 }
 
 bool RefGovCon::get_states()
@@ -71,7 +120,8 @@ bool RefGovCon::get_states()
     // chama o serviço para solicitar os estados internos
     bool result;
     gz::msgs::Boolean req;
-    bool executed = _Node.Request("/JumpRobot/States/lowState", req, 5, this->_low_states, result);
+    req.set_data(true);
+    bool executed = _Node.Request("/JumpRobot/States/lowState", req, 5000, this->_low_states, result);
     if (executed)
     {
         if (result)

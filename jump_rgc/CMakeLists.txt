@@ -45,7 +45,6 @@ add_library(${PROJECT_NAME}
 		src/opt_problem5.cpp
 		src/opt_problem6.cpp
 		src/jump_robot_model.cpp
-		
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -56,6 +55,7 @@ target_link_libraries(${PROJECT_NAME}
 		gz-plugin2::core
 		OsqpEigen::OsqpEigen
 		jump_cmsgs-msgs
+		tools_gz
 )	
 
 

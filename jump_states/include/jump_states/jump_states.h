@@ -60,7 +60,7 @@ private:
 
     void LowCmdCB(const jump::msgs::LowCmd &_msg);
 
-    // bool testeCB(const gz::msgs::Boolean &req, gz::msgs::Boolean &rep);
+    bool testeCB(const gz::msgs::Boolean &req, gz::msgs::Boolean &rep);
 
     std::string ts_topic = "/JumpRobot/foot/torqueSensor";
 
@@ -85,6 +85,8 @@ private:
     Eigen::VectorXd q, dq, tau, qr, dqr;
 
     std::mutex JumpStatesMutex;
+
+    bool first_scan = false;
 
     bool b_var = false;
 

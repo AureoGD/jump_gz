@@ -167,11 +167,16 @@ class JumpModel(object):
         self.joint_p_max = [0 * pi / 180, 120 * pi / 180, 0.7]
         self.joint_p_min = [-55 * pi / 180, 60 * pi / 180, 0.4]
 
-        self.KDmdl = KinoDynModel()
+        episode_duration = 5
+        sim_ts = 0.001
 
         self.step_length = 10
+        self.steps = 0
+        self.max_steps = episode_duration / (sim_ts * self.step_length)
+        self.min_reward = -50
 
         # robot states
+        self.KDmdl = KinoDynModel()
         self.q = np.zeros((2, 1), dtype=np.double)
         self.dq = np.zeros((2, 1), dtype=np.double)
         self.qr = np.zeros((2, 1), dtype=np.double)
@@ -187,6 +192,8 @@ class JumpModel(object):
 
         self.nn_states_input_dim = 19
         self.n_actions = 6
+        self.obs_max = 1
+        self.obs_min = 0
 
         qd_max = 20
         tau_max = 100
@@ -241,6 +248,9 @@ class JumpModel(object):
             ]
         )
 
+        self.episode_reward = 0
+        self.weight_joint_e = 0.01
+
         self.solver_status = 0
 
     def robotStates(self, msg):
@@ -285,20 +295,39 @@ class JumpModel(object):
         normalized_states = np.clip(
             np.matmul(self.alfa, states.reshape(self.nn_states_input_dim, 1))
             + self.beta,
-            0,
-            1,
+            self.obs_min,
+            self.obs_max,
         )
         return normalized_states
 
     def reward(self):
-        pass
+        reward = 0
+
+        joint_e = self.qr - self.q
+        for index in range(len(joint_e)):
+            reward += self.weight_joint_e / sqrt(joint_e[index] ** 2)
+
+        if self.b[1, 0] - 0.285 * cos(self.q[0, 0]) - 0.125 < 0.05:
+            reward += -0.75
+
+        self.episode_reward += reward
+        return reward
 
     def done(self):
-        pass
+        # ic(self.steps)
+        # when finish the time of episode or the reward is too low
+        if self.steps == self.max_steps:
+            return True
+
+        if self.episode_reward <= self.min_reward:
+            return True
+
+        # otherwise continue
+        return False
 
     def observation(self):
         # r, dr, fp, dfp, q, dq, qr, tau,ac, trans_val
-        self.transition_history = self.CheckTransition()
+        self.transition_history = self.checkTransition()
         states = np.vstack(
             (
                 self.KDmdl.com_pos_w,
@@ -315,13 +344,13 @@ class JumpModel(object):
             )
         )
         # ic(states)
-        return (self.normalize_states(states)).reshape((self.nn_states_input_dim, 1))
+        return (self.normalize_states(states)).reshape((self.nn_states_input_dim,))
 
     def actionList(self, action):
         self.actions[:] = np.roll(self.actions, 1)
         self.actions[0] = action
 
-    def CheckTransition(self):
+    def checkTransition(self):
         count = 0
         for i in range((len(self.actions) - 1), 0, -1):
             if self.actions[i] != self.actions[i - 1] and self.actions[i] != -1:
@@ -330,3 +359,8 @@ class JumpModel(object):
         #     return 0
         # else:
         return count
+
+    def resetVars(self):
+        self.steps = 0
+        self.actions = -np.ones((self.N, 1))
+        self.episode_reward = 0
