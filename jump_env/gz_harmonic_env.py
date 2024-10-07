@@ -7,6 +7,8 @@ from gz.msgs10.world_control_pb2 import WorldControl
 from gz.msgs10.boolean_pb2 import Boolean
 
 import agent_interface
+from icecream import ic
+import time
 
 
 class GzTrainning(gym.Env):
@@ -50,6 +52,8 @@ class GzTrainning(gym.Env):
             Boolean,
             self.timeout_reset,
         )
+
+        time.sleep(0.01)
 
         self.observation = self.model.observation()
         self.reward = self.model.reward()

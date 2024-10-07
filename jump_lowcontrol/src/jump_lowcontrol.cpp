@@ -5,6 +5,9 @@ JumpLowControl::JumpLowControl()
     this->q0.resize(3, 1);
     this->q0.setZero();
 
+    this->qaux.resize(3, 1);
+    this->qaux.setZero();
+
     this->qr.resize(2, 1);
     this->qr.setZero();
 }
@@ -22,6 +25,8 @@ void JumpLowControl::Configure(const gz::sim::Entity &_entity,
     std::cout << "========================== Low Controller =========================" << std::endl;
 
     ecm_ = &_ecm;
+
+    std::cout << ecm_ << std::endl;
 
     this->model = gz::sim::Model(_entity);
 
@@ -136,14 +141,17 @@ void JumpLowControl::SetJointPos(Eigen::VectorXd &_q)
 {
     for (int idx = 0; idx < 3; idx++)
     {
+        // std::cout << &this->joint_names[idx] << std::endl;1
+        std::cout << (_q)(idx) << std::endl;
         this->ecm_->SetComponentData<gz::sim::v8::components::JointPositionReset>(this->model.JointByName(*this->ecm_, this->joint_names[idx]), {(_q)(idx)});
     }
+    std::cout << "----" << std::endl;
 }
 
 bool JumpLowControl::ResetJointsPosCB(const gz::msgs::Double_V &req, gz::msgs::Boolean &rep)
 {
-    _toolsGz.VecMsg2VecEigen(req, &this->q0);
-    this->SetJointPos(this->q0);
+    _toolsGz.VecMsg2VecEigen(req, &this->qaux);
+    this->SetJointPos(this->qaux);
     rep.set_data(true);
     return true;
 }

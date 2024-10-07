@@ -34,6 +34,12 @@ RefGovCon::RefGovCon()
         std::cerr << "Error advertising topic [" << this->topic_name << "]" << std::endl;
     }
 
+    this->rgcError = this->_Node.Advertise<gz::msgs::Boolean>(this->topic_error_name);
+    if (!this->rgcError)
+    {
+        std::cerr << "Error advertising topic [" << this->topic_error_name << "]" << std::endl;
+    }
+
     this->_optProblem.RGCConfig(1.0 / 100.0, 60, 5);
 
     // this->rgc_pub = new gz::transport::Node::Advertise<jump::msgs::LowCmd>(this->topic_name);
@@ -91,9 +97,15 @@ void RefGovCon::thControl()
             else
             {
                 this->_JumpRobot.UpdateSysMatrices();
-                bool valid_sol = _optProblem.ChooseRGCPO(mode);
+                int valid_sol = _optProblem.ChooseRGCPO(mode);
+                if (valid_sol == -1)
+                {
+                    gz::msgs::Boolean msg;
+                    msg.set_data(0);
+                    this->rgcError.Publish(msg);
+                }
                 jump::msgs::LowCmd low_cmd;
-                low_cmd.set_valid(valid_sol);
+                low_cmd.set_valid(bool(valid_sol));
                 _toolsGz.EigenVec2VecMsg(this->qr, low_cmd.mutable_qr());
                 this->rgcPub.Publish(low_cmd);
                 this->mode = -1;

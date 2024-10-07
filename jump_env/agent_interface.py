@@ -59,8 +59,8 @@ class AgenteInterface:
         # variables to perform one step
         self.req_world_control = WorldControl()
         self.rep_world_control = Boolean()
-        self.world_control_timeout = 1000
-        self.req_world_control.multi_step = 1  # model.step_size
+        self.world_control_timeout = 2000
+        self.req_world_control.multi_step = 2  # model.step_size
         self.req_world_control.step = True
         self.req_world_control.pause = True
 
@@ -77,6 +77,8 @@ class AgenteInterface:
         self.valid_rep = False
         self.mutex = Lock()
 
+        self.node.subscribe(Boolean, "JumpRobot/RGC/solverError", self.rgc_error_cb)
+
     def action(self, action):  # call the service for new action (requeste new qr)
         self.req_action.data = action
         self.robot_model.actionList(action)
@@ -91,7 +93,7 @@ class AgenteInterface:
             while self.wainting_rgc:
                 pass
 
-            print(self.rep_lowCmd)
+            # print(self.rep_lowCmd)
             if not self.newRef_pub.publish(self.rep_lowCmd):
                 ic("--- New reference publish error ---")
 
@@ -104,13 +106,14 @@ class AgenteInterface:
             self.req_pause,
             WorldControl,
             Boolean,
-            1000,
+            2000,
         )
 
+        time.sleep(0.1)
         # if pause, random values for joints position are created
         if result and self.rep_pause.data:
             q = self.robot_model.randonJointPos()
-
+            ic(q)
             for index in range(len(q)):
                 self.req_JointPos.data[index] = q[index, 0]
 
@@ -119,24 +122,27 @@ class AgenteInterface:
                 self.req_JointPos,
                 Double_V,
                 Boolean,
-                5000,
+                2000,
             )
+            if result:
+                # run some steps to update the sensors data
+                result, self.rep_world_control = self.node.request(
+                    "/world/default/control",
+                    self.req_world_control,
+                    WorldControl,
+                    Boolean,
+                    self.world_control_timeout,
+                )
+                time.sleep(0.1)
+                self.robot_model.resetVars()
+                if result:
+                    return self.observation()
+                else:
+                    ic("--- Req obs error---")
+            else:
+                ic("--- New joints position error ---")
         else:
             ic("--- Reset error ---")
-
-        # run some steps to update the sensors data
-        result, self.rep_world_control = self.node.request(
-            "/world/default/control",
-            self.req_world_control,
-            WorldControl,
-            Boolean,
-            self.world_control_timeout,
-        )
-
-        time.sleep(0.003)
-        self.robot_model.resetVars()
-
-        return self.observation()
 
     def observation(self):
         self.req_boolean.data = True
@@ -163,14 +169,12 @@ class AgenteInterface:
         with self.mutex:
             if msg.valid:
                 self.valid_rep = True
+                # ic("ERROR")
             else:
                 self.valid_rep = False
             self.rep_lowCmd = msg
             self.wainting_rgc = False
 
-
-ag = AgenteInterface()
-time.sleep(1)
-while 1:
-    ag.action(1)
-    time.sleep(0.01)
+    def rgc_error_cb(self, msg: Int32):
+        ic("error at solver")
+        self.robot_model.rgc_error = True

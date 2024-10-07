@@ -194,6 +194,7 @@ class JumpModel(object):
         self.n_actions = 6
         self.obs_max = 1
         self.obs_min = 0
+        self.weight_npo = 0.1
 
         qd_max = 20
         tau_max = 100
@@ -253,6 +254,8 @@ class JumpModel(object):
 
         self.solver_status = 0
 
+        self.rgc_error = False
+
     def robotStates(self, msg):
         self.b[1] = msg.q.data[0]
         self.db[1] = msg.dq.data[0]
@@ -269,8 +272,8 @@ class JumpModel(object):
         self.qr[0] = msg.qr.data[0]
         self.qr[1] = msg.qr.data[1]
 
-        self.dqr[0] = msg.dqr.data[0]
-        self.dqr[1] = msg.dqr.data[1]
+        # self.dqr[0] = msg.dqr.data[0]
+        # self.dqr[1] = msg.dqr.data[1]
 
         self.fContSt = msg.fc
 
@@ -280,7 +283,7 @@ class JumpModel(object):
         q = np.zeros((len(self.joint_name), 1), dtype=np.double)
         # ensure that the feet is not inside the ground
         while (
-            q[2, 0] - 0.25 * cos(q[0, 0] + q[1, 0]) - 0.2850 * cos(self.q[0, 0]) - 0.125
+            q[2, 0] - 0.25 * cos(q[0, 0] + q[1, 0]) - 0.2850 * cos(q[0, 0]) - 0.125
             < 0.1
         ):
             for index in range(len(q)):
@@ -310,7 +313,25 @@ class JumpModel(object):
         if self.b[1, 0] - 0.285 * cos(self.q[0, 0]) - 0.125 < 0.05:
             reward += -0.75
 
+        # if the foot is in contact, punish the use of OP 2 and 3
+        if self.fContSt:
+            if self.actions[0] == 2 or self.actions[0] == 3:
+                reward += -self.weight_npo
+
+        reward += 0.001 * (1 - self.transition_history)
+
+        v = (
+            self.b[1, 0]
+            - 0.25 * cos(self.q[0, 0] + self.q[1, 0])
+            - 0.2850 * cos(self.q[0, 0])
+            - 0.125
+        )
+        if v < -0.05:
+            print(v)
+            reward = -50 - abs(reward)
+
         self.episode_reward += reward
+
         return reward
 
     def done(self):
@@ -319,9 +340,15 @@ class JumpModel(object):
         if self.steps == self.max_steps:
             return True
 
-        if self.episode_reward <= self.min_reward:
+        if self.rgc_error:
             return True
 
+        if self.episode_reward <= self.min_reward:
+            ic("min reward")
+            return True
+
+        if self.b[1, 0] < 0.2:
+            return True
         # otherwise continue
         return False
 
@@ -355,9 +382,6 @@ class JumpModel(object):
         for i in range((len(self.actions) - 1), 0, -1):
             if self.actions[i] != self.actions[i - 1] and self.actions[i] != -1:
                 count += 1
-        # if count == 1 or count == 0:
-        #     return 0
-        # else:
         return count
 
     def resetVars(self):

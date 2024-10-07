@@ -140,7 +140,7 @@ void Op_Wrapper::RGCConfig(double _ts, double _Kp, double _Kd)
     this->first_conf = 1;
 }
 
-bool Op_Wrapper::ChooseRGCPO(int npo)
+int Op_Wrapper::ChooseRGCPO(int npo)
 {
     // verify if the PO is the same that the used before
     if (npo != this->last_op)
@@ -153,32 +153,37 @@ bool Op_Wrapper::ChooseRGCPO(int npo)
         this->last_op = npo;
     }
 
-    if (npo == 0 || npo == 1 || npo == 4 || npo == 5)
+    if (this->solver.isInitialized())
     {
-        // update the states vector |dr, q, r, g, qa|
-        this->x << _JumpRobot->com_vel, *(q), _JumpRobot->com_pos, this->g, *(qr);
-    }
+        if (npo == 0 || npo == 1 || npo == 4 || npo == 5)
+        {
+            // update the states vector |dr, q, r, g, qa|
+            this->x << _JumpRobot->com_vel, *(q), _JumpRobot->com_pos, this->g, *(qr);
+        }
 
-    if (npo == 2 || npo == 3)
-    {
-        // update the states vector |dr, q, qa|
-        this->x << *(qd), *(q), *(qr);
-    }
+        if (npo == 2 || npo == 3)
+        {
+            // update the states vector |dr, q, qa|
+            this->x << *(qd), *(q), *(qr);
+        }
 
-    this->qhl = this->op[npo]->qhl;
-    this->op[npo]->UpdateStates(this->x);
+        this->qhl = this->op[npo]->qhl;
+        this->op[npo]->UpdateStates(this->x);
 
-    this->op[npo]->UpdateOptimizationProblem(this->H, this->F, this->Ain, this->Lb, this->Ub);
+        this->op[npo]->UpdateOptimizationProblem(this->H, this->F, this->Ain, this->Lb, this->Ub);
 
-    if (this->SolvePO())
-    {
-        *(qr) = *(qr) + this->delta_qref;
-        return 1;
+        if (this->SolvePO())
+        {
+            *(qr) = *(qr) + this->delta_qref;
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
     }
     else
-    {
-        return 0;
-    }
+        return -1;
 }
 
 void Op_Wrapper::ClearPO()
@@ -240,7 +245,11 @@ void Op_Wrapper::ConfPO(int index)
     }
     else
     {
-        this->solver.initSolver();
+        if (!this->solver.initSolver())
+        {
+            std::cout << index << std::endl;
+            // exit(0);
+        }
     }
 }
 

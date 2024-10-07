@@ -79,7 +79,7 @@ private:
 
     std::vector<std::string> joint_names;
 
-    Eigen::VectorXd qr, q0;
+    Eigen::VectorXd qr, q0, qaux;
 
     std::chrono::steady_clock::duration updatePeriod{0};
 

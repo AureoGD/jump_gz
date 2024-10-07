@@ -26,7 +26,7 @@ public:
 
     void RGCConfig(double _ts, double _Kp, double _Kd);
 
-    bool ChooseRGCPO(int npo);
+    int ChooseRGCPO(int npo);
 
     bool SolvePO();
 

@@ -42,6 +42,8 @@ private:
 
     std::string topic_name = "JumpRobot/RGC/lowcmd";
 
+    std::string topic_error_name = "JumpRobot/RGC/solverError";
+
     Op_Wrapper _optProblem;
 
     Eigen::Matrix<double, 2, 1> b, db, q, dq, qr;
@@ -67,6 +69,7 @@ private:
     bool run = false;
 
     gz::transport::Node::Publisher rgcPub;
+    gz::transport::Node::Publisher rgcError;
     // std::shared_ptr<gz::transport::Node<jump::msgs::LowCmd>::element_typeAdvertise> rgcPub;
 };
 #endif
