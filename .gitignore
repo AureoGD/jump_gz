@@ -7,4 +7,4 @@ jump_states/build
 tools_gz/build
 .vscode/
 logs/
-model/
+models/
