@@ -141,17 +141,16 @@ void JumpLowControl::SetJointPos(Eigen::VectorXd &_q)
 {
     for (int idx = 0; idx < 3; idx++)
     {
-        // std::cout << &this->joint_names[idx] << std::endl;1
-        std::cout << (_q)(idx) << std::endl;
         this->ecm_->SetComponentData<gz::sim::v8::components::JointPositionReset>(this->model.JointByName(*this->ecm_, this->joint_names[idx]), {(_q)(idx)});
     }
-    std::cout << "----" << std::endl;
 }
 
 bool JumpLowControl::ResetJointsPosCB(const gz::msgs::Double_V &req, gz::msgs::Boolean &rep)
 {
+    std::cout << "new q0" << std::endl;
     _toolsGz.VecMsg2VecEigen(req, &this->qaux);
     this->SetJointPos(this->qaux);
+    // this->q0 << this->qaux(0), this->qaux(1), this->qaux(2);
     rep.set_data(true);
     return true;
 }
@@ -168,6 +167,16 @@ void JumpLowControl::LowCmdCB(const jump::msgs::LowCmd &_msg)
     std::lock_guard<std::mutex> lock(this->JumpControlMutex);
     _toolsGz.VecMsg2VecEigen(_msg.qr(), &this->qr);
     // _toolsGz.VecMsg2VecEigen(_msg.dq(), &this->dqr);
+}
+
+void JumpLowControl::Reset(const gz::sim::UpdateInfo &_info,
+                           gz::sim::EntityComponentManager &_ecm)
+{
+    // std::cout << "hey, reset" << std::endl;
+    // for (int idx = 0; idx < 3; idx++)
+    // {
+    //     _ecm.SetComponentData<gz::sim::v8::components::JointPositionReset>(this->model.JointByName(_ecm, this->joint_names[idx]), {(this->q0)(idx)});
+    // }
 }
 
 void JumpLowControl::PreUpdate(const gz::sim::UpdateInfo &_info,
@@ -201,6 +210,9 @@ void JumpLowControl::PreUpdate(const gz::sim::UpdateInfo &_info,
 GZ_ADD_PLUGIN(JumpLowControl,
               gz::sim::System,
               JumpLowControl::ISystemConfigure,
-              JumpLowControl::ISystemPreUpdate);
+              JumpLowControl::ISystemPreUpdate,
+              JumpLowControl::ISystemReset);
+
+//   JumpLowControl::ISystemReset
 
 GZ_ADD_PLUGIN_ALIAS(JumpLowControl, "JumpLowControl")

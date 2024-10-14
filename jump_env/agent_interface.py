@@ -134,13 +134,44 @@ class AgenteInterface:
                     self.world_control_timeout,
                 )
                 time.sleep(0.1)
-                self.robot_model.resetVars()
+
                 if result:
+                    self.robot_model.resetVars()
                     return self.observation()
                 else:
                     ic("--- Req obs error---")
             else:
                 ic("--- New joints position error ---")
+        else:
+            ic("--- Reset error ---")
+
+    def reset2(self):
+        reset_req = WorldControl()
+        reset_req.reset.all = True
+        reset_req.pause = True
+        result, self.rep_world_control = self.node.request(
+            "/world/default/control",
+            reset_req,
+            WorldControl,
+            Boolean,
+            self.world_control_timeout,
+        )
+        time.sleep(0.1)
+        if result:
+            ic("--- Reset done ---")
+            result, self.rep_world_control = self.node.request(
+                "/world/default/control",
+                self.req_world_control,
+                WorldControl,
+                Boolean,
+                self.world_control_timeout,
+            )
+            time.sleep(0.1)
+            if result:
+                self.robot_model.resetVars()
+                return self.observation()
+            else:
+                ic("--- Req obs error---")
         else:
             ic("--- Reset error ---")
 
@@ -152,8 +183,10 @@ class AgenteInterface:
         )
 
         # update robot variables
-        self.robot_model.robotStates(self.rep_lowStates)
-
+        if result:
+            self.robot_model.robotStates(self.rep_lowStates)
+        else:
+            ic("error to get observation")
         return self.robot_model.observation()
 
     def reward(self):

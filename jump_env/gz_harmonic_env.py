@@ -66,7 +66,7 @@ class GzTrainning(gym.Env):
 
     def reset(self, seed=None):
         super().reset(seed=seed)
-        self.observation = self.model.reset()
+        self.observation = self.model.reset2()
         info = {"ep": self.model.ep}
         return self.observation, info
 

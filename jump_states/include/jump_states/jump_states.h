@@ -31,7 +31,8 @@
 
 class JumpStates : public gz::sim::System,
                    public gz::sim::ISystemConfigure,
-                   public gz::sim::ISystemPostUpdate
+                   public gz::sim::ISystemPostUpdate,
+                   public gz::sim::ISystemReset
 {
 public:
     JumpStates();
@@ -45,6 +46,9 @@ public:
 
     void PostUpdate(const gz::sim::UpdateInfo &_info,
                     const gz::sim::EntityComponentManager &_ecm);
+
+    void Reset(const gz::sim::UpdateInfo &_info,
+               gz::sim::EntityComponentManager &_ecm);
 
 private:
     void CreateComponents(gz::sim::v8::EntityComponentManager &_ecm,

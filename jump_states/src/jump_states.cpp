@@ -89,6 +89,12 @@ void JumpStates::Configure(const gz::sim::Entity &_entity,
     std::cout << "===================================================================" << std::endl;
 }
 
+void JumpStates::Reset(const gz::sim::UpdateInfo &_info,
+                       gz::sim::EntityComponentManager &_ecm)
+{
+    // std::cout << "hey, reset 2" << std::endl;
+}
+
 bool JumpStates::testeCB(const gz::msgs::Boolean &req, gz::msgs::Boolean &rep)
 {
     std::cout << req.data() << std::endl;
@@ -211,6 +217,7 @@ void JumpStates::PostUpdate(const gz::sim::UpdateInfo &_info,
 GZ_ADD_PLUGIN(JumpStates,
               gz::sim::System,
               JumpStates::ISystemConfigure,
-              JumpStates::ISystemPostUpdate);
+              JumpStates::ISystemPostUpdate,
+              JumpStates::ISystemReset);
 
 GZ_ADD_PLUGIN_ALIAS(JumpStates, "JumpStates")

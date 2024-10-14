@@ -203,23 +203,27 @@
           </inertia>
         </inertial>
       </link>
+
+      <link name="dummy_link">
+        <!-- <pose>0 0 0.34 0 0 0</pose> -->
+        <pose>0 1 0 0 0 0</pose>
+
+      </link>
       
-      <joint name="base" type="prismatic">
+      <joint name="base_r" type="revolute">
         <parent>world</parent>
+        <child>dummy_link</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+      <joint name="base" type="prismatic">
+        <parent>dummy_link</parent>
         <child>body_a</child>
         <axis>
           <xyz>0 0 1</xyz>
         </axis>
-                <!-- <sensor name="force_torque_sensor" type="force_torque">
-          <always_on>true</always_on>
-          <update_rate>100</update_rate>
-          <visualize>true</visualize>
-          <topic>/JumpRobot/base/force_torque</topic>
-          <force_torque>
-            <frame>sensor</frame>
-            <measure_direction>parent_to_child</measure_direction>
-          </force_torque>
-        </sensor> -->
       </joint>
 
       <joint name="hfe" type="revolute">
@@ -302,15 +306,6 @@
         <kp> 60 </kp>
         <kd> 5 </kd>
         <tau_max> 250 </tau_max>
-      </plugin>
-
-      <plugin name="JumpSimEnvControl" 
-        filename="/home/agd/jump_gz/jump_simenvcontrol/build/libjump_simenvcontrol.so">
-        <joint_name>hfe</joint_name>
-        <joint_name>kfe</joint_name>
-        <joint_name>base</joint_name>
-        <qmin>-55.0 , 60.0, 0.4</qmin>
-        <qmax>0.0, 120.0, 0.7</qmax>
       </plugin>
       
       <plugin name="JumpStates" 

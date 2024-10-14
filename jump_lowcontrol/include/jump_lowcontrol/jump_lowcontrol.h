@@ -25,9 +25,12 @@
 
 #include "tools_gz/tools_gz.h"
 
+//    public gz::sim::ISystemReset
+
 class JumpLowControl : public gz::sim::System,
                        public gz::sim::ISystemConfigure,
-                       public gz::sim::ISystemPreUpdate
+                       public gz::sim::ISystemPreUpdate,
+                       public gz::sim::ISystemReset
 {
 public:
     /// Constructor
@@ -44,8 +47,8 @@ public:
     void PreUpdate(const gz::sim::UpdateInfo &_info,
                    gz::sim::EntityComponentManager &_ecm);
 
-    // void Reset(const gz::sim::UpdateInfo &_info,
-    //            gz::sim::EntityComponentManager &_ecm) override;
+    void Reset(const gz::sim::UpdateInfo &_info,
+               gz::sim::EntityComponentManager &_ecm);
 
 private:
     void CreateComponents(gz::sim::v8::EntityComponentManager &_ecm,
