@@ -4,7 +4,7 @@ jump_env/__pycache__
 jump_lowcontrol/build
 jump_rgc/build
 jump_states/build
-jump_simenvcontrol/build
+# jump_simenvcontrol/build
 tools_gz/build
 .vscode/
 logs/
