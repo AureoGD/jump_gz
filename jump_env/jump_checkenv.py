@@ -13,7 +13,7 @@ for episode in range(episodes):
     ic("begin")
     env.reset()
     ic("end", episode)
-    time.sleep(0.5)
+    time.sleep(0.2)
     # rand_ac = env.action_space.sample()
     # print("action: ", rand_ac)
     # obs, reward, done, info, _ = env.step(rand_ac)
