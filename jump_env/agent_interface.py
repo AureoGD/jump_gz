@@ -80,6 +80,7 @@ class AgenteInterface:
         self.node.subscribe(Boolean, "JumpRobot/RGC/solverError", self.rgc_error_cb)
 
     def action(self, action):  # call the service for new action (requeste new qr)
+        self.incrementStep()
         self.req_action.data = action
         self.robot_model.actionList(action)
         self.rep_bool = Boolean()
@@ -146,6 +147,7 @@ class AgenteInterface:
             ic("--- Reset error ---")
 
     def reset2(self):
+        self.ep += 1
         reset_req = WorldControl()
         reset_req.reset.all = True
         reset_req.pause = True
@@ -158,7 +160,6 @@ class AgenteInterface:
         )
         time.sleep(0.1)
         if result:
-            ic("--- Reset done ---")
             result, self.rep_world_control = self.node.request(
                 "/world/default/control",
                 self.req_world_control,
@@ -166,7 +167,7 @@ class AgenteInterface:
                 Boolean,
                 self.world_control_timeout,
             )
-            time.sleep(0.1)
+            time.sleep(0.15)
             if result:
                 self.robot_model.resetVars()
                 return self.observation()
@@ -181,7 +182,6 @@ class AgenteInterface:
         result, self.rep_lowStates = self.node.request(
             "/JumpRobot/States/lowState", self.req_boolean, Boolean, LowStates, 5000
         )
-
         # update robot variables
         if result:
             self.robot_model.robotStates(self.rep_lowStates)
@@ -196,7 +196,7 @@ class AgenteInterface:
         return self.robot_model.done()
 
     def incrementStep(self):
-        self.robot_model.self.steps += 1
+        self.robot_model.steps += 1
 
     def rgc_cb(self, msg: LowCmd):
         with self.mutex:

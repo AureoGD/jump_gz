@@ -24,6 +24,7 @@ TIMESTEPS = 100
 iters = 0
 while iters < 5000:
     iters += 1
+    # print("Inter: ", iters)
     model.learn(
         total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO"
     )

@@ -68,7 +68,7 @@ private:
 
     std::string req_qr_service_name = "JumpRobot/Control/qrReq";
 
-    double kp, kd;
+    double kp, kd, tau_max;
 
     ToolsGZ _toolsGz;
 
@@ -82,7 +82,7 @@ private:
 
     std::vector<std::string> joint_names;
 
-    Eigen::VectorXd qr, q0, qaux;
+    Eigen::VectorXd qr, q0, qaux, q, dq, tau_g;
 
     std::chrono::steady_clock::duration updatePeriod{0};
 

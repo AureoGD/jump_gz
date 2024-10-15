@@ -194,7 +194,7 @@ class JumpModel(object):
         self.n_actions = 6
         self.obs_max = 1
         self.obs_min = 0
-        self.weight_npo = 0.1
+        self.weight_npo = 2
 
         qd_max = 20
         tau_max = 100
@@ -250,7 +250,7 @@ class JumpModel(object):
         )
 
         self.episode_reward = 0
-        self.weight_joint_e = 0.01
+        self.weight_joint_e = 0.0075
 
         self.solver_status = 0
 
@@ -311,23 +311,22 @@ class JumpModel(object):
             reward += self.weight_joint_e / sqrt(joint_e[index] ** 2)
 
         if self.b[1, 0] - 0.285 * cos(self.q[0, 0]) - 0.125 < 0.05:
-            reward += -0.75
+            reward += -1
 
         # if the foot is in contact, punish the use of OP 2 and 3
         if self.fContSt:
             if self.actions[0] == 2 or self.actions[0] == 3:
                 reward += -self.weight_npo
 
-        reward += 0.001 * (1 - self.transition_history)
+        reward += 1 * (1 - self.transition_history)
 
-        v = (
+        if (
             self.b[1, 0]
             - 0.25 * cos(self.q[0, 0] + self.q[1, 0])
             - 0.2850 * cos(self.q[0, 0])
             - 0.125
-        )
-        if v < -0.05:
-            print(v)
+            < -0.05
+        ):
             reward = -50 - abs(reward)
 
         self.episode_reward += reward
@@ -344,7 +343,6 @@ class JumpModel(object):
             return True
 
         if self.episode_reward <= self.min_reward:
-            ic("min reward")
             return True
 
         if self.b[1, 0] < 0.2:

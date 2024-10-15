@@ -68,7 +68,9 @@ private:
 
     OsqpEigen::Solver solver;
 
-    bool debug = 0;
+    bool debug = true;
+
+    bool error_flag = false;
 };
 
 #endif

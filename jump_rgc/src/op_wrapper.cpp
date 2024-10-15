@@ -143,14 +143,15 @@ void Op_Wrapper::RGCConfig(double _ts, double _Kp, double _Kd)
 int Op_Wrapper::ChooseRGCPO(int npo)
 {
     // verify if the PO is the same that the used before
-    if (npo != this->last_op)
+    if (npo != this->last_op || error_flag)
     {
-        if (this->solver.isInitialized())
+        if (this->solver.isInitialized() || error_flag)
         {
             this->ClearPO();
         }
         this->ConfPO(npo);
         this->last_op = npo;
+        error_flag = false;
     }
 
     if (this->solver.isInitialized())
@@ -183,7 +184,11 @@ int Op_Wrapper::ChooseRGCPO(int npo)
         }
     }
     else
+    {
+        error_flag = true;
+        std::cout << "RGC conf error" << std::endl;
         return -1;
+    }
 }
 
 void Op_Wrapper::ClearPO()
@@ -272,21 +277,21 @@ bool Op_Wrapper::SolvePO()
     {
         if (this->solver.getStatus() != OsqpEigen::Status::Solved)
         {
-            if (this->debug)
-                std::cout << "Not solved" << std::endl;
+            // if (this->debug)
+            //     std::cout << "Not solved" << std::endl;
             return 0;
         }
 
         this->QPSolution = this->solver.getSolution();
         this->delta_qref = this->QPSolution.block(0, 0, 2, 1);
-        if (this->debug)
-            std::cout << "Solved" << std::endl;
+        // if (this->debug)
+        //     std::cout << "Solved" << std::endl;
         return 1;
     }
     else
     {
         if (this->debug)
-            std::cout << "Not solved" << std::endl;
+            std::cout << "Not solved - error" << std::endl;
         return 0;
     }
 }

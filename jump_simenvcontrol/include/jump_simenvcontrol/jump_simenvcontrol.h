@@ -58,6 +58,8 @@ private:
 
     std::vector<std::string> joint_names;
 
+    int var = 0;
+
     Eigen::VectorXd qaux, qmin, qmax;
 };
 

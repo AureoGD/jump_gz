@@ -69,8 +69,3 @@ class GzTrainning(gym.Env):
         self.observation = self.model.reset2()
         info = {"ep": self.model.ep}
         return self.observation, info
-
-
-# env = GzTrainning()
-
-# env.step(0)

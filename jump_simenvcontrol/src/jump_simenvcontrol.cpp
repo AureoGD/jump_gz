@@ -66,6 +66,8 @@ void JumpSimEnvControl::Configure(const gz::sim::Entity &_entity,
 void JumpSimEnvControl::Reset(const gz::sim::UpdateInfo &_info,
                               gz::sim::EntityComponentManager &_ecm)
 {
+    // std::cout << "Sim env control reset " << this->var << std::endl;
+    // this->var++;
     double d = 0;
     while (d < 0.1)
     {

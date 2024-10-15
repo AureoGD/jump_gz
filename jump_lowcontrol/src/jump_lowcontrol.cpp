@@ -10,6 +10,15 @@ JumpLowControl::JumpLowControl()
 
     this->qr.resize(2, 1);
     this->qr.setZero();
+
+    this->q.resize(2, 1);
+    this->q.setZero();
+
+    this->dq.resize(2, 1);
+    this->dq.setZero();
+
+    this->tau_g.resize(2, 1);
+    this->tau_g.setZero();
 }
 
 JumpLowControl::~JumpLowControl()
@@ -37,6 +46,8 @@ void JumpLowControl::Configure(const gz::sim::Entity &_entity,
     this->kp = _sdf->Get<double>("kp");
 
     this->kd = _sdf->Get<double>("kd");
+
+    this->tau_max = _sdf->Get<double>("tau_max");
 
     double rate = _sdf->Get<double>("update_rate", 100).first;
 
@@ -172,11 +183,6 @@ void JumpLowControl::LowCmdCB(const jump::msgs::LowCmd &_msg)
 void JumpLowControl::Reset(const gz::sim::UpdateInfo &_info,
                            gz::sim::EntityComponentManager &_ecm)
 {
-    // std::cout << "hey, reset" << std::endl;
-    // for (int idx = 0; idx < 3; idx++)
-    // {
-    //     _ecm.SetComponentData<gz::sim::v8::components::JointPositionReset>(this->model.JointByName(_ecm, this->joint_names[idx]), {(this->q0)(idx)});
-    // }
 }
 
 void JumpLowControl::PreUpdate(const gz::sim::UpdateInfo &_info,
@@ -200,10 +206,42 @@ void JumpLowControl::PreUpdate(const gz::sim::UpdateInfo &_info,
         if (jointPositions == nullptr || jointPositions->Data().empty() || jointVelocity == nullptr || jointVelocity->Data().empty())
             return;
 
-        double tau = this->kp * (this->qr[idx] - jointPositions->Data()[0]) - this->kd * jointVelocity->Data()[0];
+        this->q(idx) = jointPositions->Data()[0];
+        this->dq(idx) = jointVelocity->Data()[0];
+
+        // double tau = this->kp * (this->qr[idx] - jointPositions->Data()[0]) - this->kd * jointVelocity->Data()[0];
+        // if (tau > tau_max)
+        //     tau = tau_max;
+        // if (tau < -tau_max)
+        //     tau = -tau_max;
+        // if (std::isnan(tau))
+        //     tau = 0;
+        // auto forceComp = _ecm.Component<gz::sim::v8::components::JointForceCmd>(this->model.JointByName(_ecm, this->joint_names[idx]));
+        // *forceComp = gz::sim::v8::components::JointForceCmd({tau});
+    }
+
+    this->tau_g(0) = 0.5325 * sin(q(0)) + 0.126 * sin(q(0) + q(1));
+    this->tau_g(1) = 0.126 * sin(q(0) + q(1));
+
+    for (int idx = 0; idx < 2; idx++)
+    {
+        if (this->qr[idx] > 2 * 3.14 || this->qr[idx] < -2 * 3.14)
+            std::cout << "qt error" << std::endl;
+        double tau = this->tau_g[idx] * 9.81 + this->kp * (this->qr[idx] - this->q[idx]) - this->kd * this->dq[idx];
+
+        if (tau > tau_max)
+            tau = tau_max;
+        if (tau < -tau_max)
+            tau = -tau_max;
+        if (std::isnan(tau))
+        {
+            std::cout << "--- ERROR ---" << std::endl;
+            tau = 0;
+        }
         auto forceComp = _ecm.Component<gz::sim::v8::components::JointForceCmd>(this->model.JointByName(_ecm, this->joint_names[idx]));
         *forceComp = gz::sim::v8::components::JointForceCmd({tau});
     }
+
     this->lastUpdateTime = _info.simTime;
 }
 
